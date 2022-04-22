@@ -28,7 +28,9 @@ class ProcessApps(ProcessApplication):
             f"ProcessApps[ProcessApplication] ==> {domain_event}")
         levels = example01.utils.get_runner(example01.system).get(Levels)
         level_customers_index = levels.add_customer_to_level(
-            domain_event.level_id, domain_event.customer_id)
+            domain_event.level_id,
+            domain_event.customer_id,
+            collect_events=False)
         process_event.collect_events(level_customers_index)
 
     @policy.register(LevelCustomersIndex.LevelCustomersRefAdded)
@@ -39,7 +41,7 @@ class ProcessApps(ProcessApplication):
             f"ProcessApps[ProcessApplication] ==> {domain_event}")
         levels = example01.utils.get_runner(example01.system).get(Levels)
         level = levels.increment_customer_count(domain_event.level_id,
-                                                collect_events=True)
+                                                collect_events=False)
         process_event.collect_events(level)
 
     @policy.register(Level.CustomerCountIncremented)
@@ -48,7 +50,3 @@ class ProcessApps(ProcessApplication):
             example01.system).info(f"ProcessApps[ProcessApplication] {self}")
         example01.utils.get_logger(example01.system).info(
             f"ProcessApps[ProcessApplication] ==> {domain_event}")
-        levels = example01.utils.get_runner(example01.system).get(Levels)
-        level = levels.increment_customer_count(domain_event.level_id,
-                                                collect_events=True)
-        process_event.collect_events(level)

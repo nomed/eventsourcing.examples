@@ -57,34 +57,3 @@ class Levels(Application):
         return cast(
             LevelCustomersIndex,
             self.repository.get(LevelCustomersIndex.create_id(level_id)))
-
-
-class ProcessLevels(ProcessApplication):
-    @singledispatchmethod
-    def policy(self, domain_event, process_event):
-        example01.utils.get_logger(
-            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
-        example01.utils.get_logger(example01.system).info(
-            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
-
-    @policy.register(LevelCustomersIndex.LevelCustomersRefAdded)
-    def _(self, domain_event, process_event):
-        example01.utils.get_logger(
-            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
-        example01.utils.get_logger(example01.system).info(
-            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
-        levels = example01.utils.get_runner(example01.system).get(Levels)
-        level = levels.increment_customer_count(domain_event.level_id,
-                                                collect_events=True)
-        process_event.collect_events(level)
-
-    @policy.register(Level.CustomerCountIncremented)
-    def _(self, domain_event, process_event):
-        example01.utils.get_logger(
-            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
-        example01.utils.get_logger(example01.system).info(
-            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
-        levels = example01.utils.get_runner(example01.system).get(Levels)
-        level = levels.increment_customer_count(domain_event.level_id,
-                                                collect_events=True)
-        process_event.collect_events(level)

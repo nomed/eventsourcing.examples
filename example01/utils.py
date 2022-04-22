@@ -5,7 +5,7 @@ def set_runner(system):
     if hasattr(system, 'runner'):
         runner = getattr(system, 'runner')
     else:
-        runner = NewMultiThreadedRunner(system)
+        runner = SingleThreadedRunner(system)
         setattr(system, 'runner', runner)
     if not system.runner.is_started:
         system.runner.start()

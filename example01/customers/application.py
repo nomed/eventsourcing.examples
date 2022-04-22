@@ -48,6 +48,7 @@ class Customers(Application):
             self.repository.get(CustomerLevelsIndex.create_id(customer_id)))
 
 
+# NOTE: this is not used
 class ProcessCustomers(ProcessApplication):
     @singledispatchmethod
     def policy(self, domain_event, process_event):
@@ -66,5 +67,5 @@ class ProcessCustomers(ProcessApplication):
             f"ProcessCustomers[ProcessApplication] ==> {domain_event}")
         levels = example01.utils.get_runner(example01.system).get(Levels)
         level_customers_index = levels.add_customer_to_level(
-            domain_event.level_id, domain_event.customer_id)
+            domain_event.level_id, domain_event.customer_id, collect_events=True)
         process_event.collect_events(level_customers_index)
