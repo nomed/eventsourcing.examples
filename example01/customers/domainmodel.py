@@ -13,7 +13,7 @@ class Customer(Aggregate):
 @dataclass
 class CustomerLevelsIndex(Aggregate):
     customer_id: UUID
-    ref: Optional[List[UUID]]
+    level_ids: Optional[List[UUID]]
 
     class Event(Aggregate.Event):
         pass
@@ -23,9 +23,9 @@ class CustomerLevelsIndex(Aggregate):
         return uuid5(NAMESPACE_URL, f"/customer/levels/{customer_id}")
 
     @event("CustomerLevelsRefAdded")
-    def add_ref(self, customer_id: UUID, ref: UUID) -> None:
+    def add_ref(self, customer_id: UUID, level_id: UUID) -> None:
         assert customer_id == self.customer_id
-        if self.ref == None:
-            self.ref = []
-        if not ref in self.ref:
-            self.ref.append(ref)
+        if self.level_ids == None:
+            self.level_ids = []
+        if not level_id in self.level_ids:
+            self.level_ids.append(level_id)

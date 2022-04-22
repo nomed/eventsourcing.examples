@@ -6,37 +6,85 @@ from eventsourcing.system import ProcessApplication
 from eventsourcing.dispatch import singledispatchmethod
 from .domainmodel import (Level, LevelCustomersIndex)
 from ..customers.domainmodel import CustomerLevelsIndex
+import example01
 
 
 class Levels(Application):
-    def register_level(self, label: str, customer_count: int = 0):
+    def notify2(self, new_events) -> None:
+        example01.utils.get_logger(
+            example01.system).info(f"Customer[Application].notify {self}")
+        for event_obj in new_events:
+            example01.utils.get_logger(example01.system).info(
+                f"Customer[Application].notify\t>> {event_obj}")
+
+    def register_level(self,
+                       label: str,
+                       customer_count: int = 0,
+                       collect_events=False):
         level = Level(label)
-        self.save(level)
-        return level.id
+        if not collect_events:
+            self.save(level)
+        return level
+
+    def add_customer_to_level(self,
+                              level_id: UUID,
+                              customer_id: UUID,
+                              collect_events=False):
+        assert self._get_level_by_id(level_id).id == level_id
+        try:
+            level_customers_index = self._get_level_customers_index(level_id)
+        except AggregateNotFound:
+            level_customers_index = LevelCustomersIndex(level_id, [])
+        if customer_id not in level_customers_index.customer_ids:
+            level_customers_index.add_ref(level_id, customer_id)
+            if not collect_events:
+                self.save(level_customers_index)
+        return level_customers_index
+
+    def increment_customer_count(self, level_id: UUID, collect_events=False):
+        level = self._get_level_by_id(level_id)
+        assert level.id == level_id
+        level.increment_customer()
+        if not collect_events:
+            self.save(level)
+        return level
+
+    def _get_level_by_id(self, level_id: UUID) -> Level:
+        return cast(Level, self.repository.get(level_id))
+
+    def _get_level_customers_index(self,
+                                   level_id: UUID) -> LevelCustomersIndex:
+        return cast(
+            LevelCustomersIndex,
+            self.repository.get(LevelCustomersIndex.create_id(level_id)))
 
 
 class ProcessLevels(ProcessApplication):
     @singledispatchmethod
     def policy(self, domain_event, process_event):
-        """Default policy"""
+        example01.utils.get_logger(
+            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
+        example01.utils.get_logger(example01.system).info(
+            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
 
     @policy.register(LevelCustomersIndex.LevelCustomersRefAdded)
     def _(self, domain_event, process_event):
-        level = self.repository.get(domain_event.level_id)
-        level.customer_count += 1
-        self.save(level)
+        example01.utils.get_logger(
+            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
+        example01.utils.get_logger(example01.system).info(
+            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
+        levels = example01.utils.get_runner(example01.system).get(Levels)
+        level = levels.increment_customer_count(domain_event.level_id,
+                                                collect_events=True)
+        process_event.collect_events(level)
 
-    @policy.register(CustomerLevelsIndex.CustomerLevelsRefAdded)
+    @policy.register(Level.CustomerCountIncremented)
     def _(self, domain_event, process_event):
-
-        try:
-            level_customers_index_id = LevelCustomersIndex.create_id(
-                domain_event.ref)
-            level_customers_index = self.repository.get(
-                level_customers_index_id)
-        except AggregateNotFound:
-            level_customers_index = LevelCustomersIndex(domain_event.ref, )
-        level_customers_index.add_ref(domain_event.ref,
-                                      domain_event.customer_id)
-        #self.save(level_customers_index)
-        process_event.collect_events(level_customers_index)
+        example01.utils.get_logger(
+            example01.system).info(f"ProcessLevels[ProcessApplication] {self}")
+        example01.utils.get_logger(example01.system).info(
+            f"ProcessLevels[ProcessApplication] ==> {domain_event}")
+        levels = example01.utils.get_runner(example01.system).get(Levels)
+        level = levels.increment_customer_count(domain_event.level_id,
+                                                collect_events=True)
+        process_event.collect_events(level)

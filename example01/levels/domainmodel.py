@@ -5,12 +5,18 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 from eventsourcing.domain import Aggregate, event
 
 
-
-
 @dataclass
 class Level(Aggregate):
     label: str
     customer_count: int = 0
+
+    @event('CustomerCountIncremented')
+    def increment_customer(self):
+        self.customer_count += 1
+
+    @event('CustomerCountDecremented')
+    def decrement_customer(self):
+        self.customer_count -= 1
 
 
 @dataclass

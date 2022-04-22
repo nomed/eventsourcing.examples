@@ -1,8 +1,9 @@
 from eventsourcing.system import System
-from .customers.application import Customers, ProcessCustomers
-from .levels.application import Levels, ProcessLevels
+from .processor import ProcessApps
+from .customers.application import Customers
+from .levels.application import Levels
+from eventsourcing.system import SingleThreadedRunner, MultiThreadedRunner
 
-pipes = [[Customers, ProcessCustomers], [Levels, ProcessLevels],
-         [Customers, ProcessLevels], [Levels, ProcessCustomers],
-         [ProcessLevels]]
+pipes = [[Customers, ProcessApps], [Levels, ProcessApps],
+         [ProcessApps, ProcessApps]]
 system = System(pipes=pipes)
